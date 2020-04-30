@@ -1,0 +1,176 @@
+---
+title: "Assignment1"
+output: html_notebook
+---
+
+## Main Topics: Data Exploration & Data Visualization
+Tasks:
+
+● Data Exploration & Visualization:
+
+1. Download the file ‘parkingLA2017.csv’ from our class Blackboard site.
+
+2. Read this file into your R environment (if it takes a while for the file to load, don’t worry -- this is normal. Be patient). Show the step that you used to accomplish this.
+```{r}
+parkingLA2017.df <- read.csv("parkingLA2017.csv", header = TRUE) # load data
+```
+
+a. What are the dimensions of this dataframe? Show the code that you used to
+determine this.
+```{r}
+dim(parkingLA2017.df) # find the dimensions of the dataframe 
+```
+
+3. Filter the dataframe. Create a new object that only contains data for your assigned “Make” of car. Show the code that you used to accomplish this. For the next set of questions, use this new dataframe.
+a. What are the dimensions of this new dataframe that only contains the rows for
+your assigned “Make” of car?
+```{r}
+library(dplyr)
+CHRY <- filter(parkingLA2017.df, Make == "CHRY") # create a new DF with 'CHRY' as a filter
+dim(CHRY) # find the new dimensions
+```
+
+
+4. Dealing with missing values:
+a) Are there any missing values in your dataset? How do you know this? Show the
+R code that you used to answer this question, along with the results that appearedin your console.
+```{r}
+anyNA(CHRY) # determine if any missing values exist with dataframe CHRY 
+
+```
+
+b) Does the variable RP.State.Plate contain any missing values? How do you know
+this? Again, show your steps and the results.
+```{r}
+anyNA(CHRY$RP.State.Plate) # determine if variabble RP.State.Plate has missing values
+
+```
+
+c) Find and display the standard deviation for the variable Fine.amount. Does the
+variable Fine.amount contain any missing values? How do you know this? Again,
+show your steps and the results. To deal with this issue, perform an imputation by replacing the NAs with a reasonable alternative. Now, find and display the
+standard deviation for this variable again. What happened? Why do you think this
+change occurred?
+```{r}
+sd(CHRY$Fine.amount) # Find the standard deviation for 'Fine.amount' variable
+anyNA(CHRY$Fine.amount) # Alternative determine if NA's exist for var 'Fine.amount' 
+median(CHRY$Fine.amount, na.rm = TRUE) # Determine if the median is reasonble
+mean(CHRY$Fine.amount, na.rm = TRUE) # Determine if the mean is reasonable
+range(CHRY$Fine.amount, na.rm = TRUE) # Observe the range for the variable
+hist(CHRY$Fine.amount) # Use the histogram to observe any outliers
+CHRY$Fine.amount[is.na(CHRY$Fine.amount)] <- median(CHRY$Fine.amount, na.rm = TRUE) # use median
+anyNA(CHRY$Fine.amount) # determine if NAs were replaced
+sd(CHRY$Fine.amount) # re-run the standard deviation 
+
+```
+
+d) Replace any blank cells in the Location column with NA. In a sentence or two,
+what does this accomplish?
+```{r}
+CHRY$Location[CHRY$Location==""] <- "NA" # replace blanks with NA's
+anyNA(CHRY$Location) # check for any NA's
+```
+
+e) Now, remove all of the records that contain “NA” for AGENCY.SHORT.NAME
+from your dataset.
+```{r}
+anyNA(CHRY$AGENCY.SHORT.NAME) # check to see if NA's exist within that variable
+library(tidyr)
+CHRY <- drop_na(CHRY, AGENCY.SHORT.NAME) # drop all NA's from 
+table(CHRY$AGENCY.SHORT.NAME) # after checking, NA's do exist
+CHRY$AGENCY.SHORT.NAME <- droplevels(CHRY$AGENCY.SHORT.NAME) # alternate to dropping NA's
+View(CHRY) 
+```
+
+
+5. Dealing with the Date data type
+A. Right now, if you call the str() function on your dataset, you’ll see that R does not recognize the Issue.Date variable as a date. Fix this by explicitly telling R to treat this variable as a date. Show the code that you used to accomplish this.
+```{r}
+CHRY$Issue.Date <- as.Date(CHRY$Issue.Date, format="%Y-%m-%d" ) # change the date based from View
+str(CHRY) # recall the structure
+```
+
+B. Are the rows currently displayed in chronological (i.e. date) order? How do you know this? Use the arrange() function from dplyr to put the dates in order. Show the code that you used to accomplish this.
+```{r}
+View(CHRY$Issue.Date) # filter by issue date or use View overall
+CHRY <- arrange(CHRY, Issue.Date) # arrange the date in chronological order
+View(CHRY) # recall View and the dates are in order
+```
+
+C. What month were you born in? Using the subset() function, make a new object that only contains dates for your particular birth month. Show the code that you used to accomplish this. We will not use this object again in any of the following steps.
+```{r}
+november <- subset(CHRY, Issue.Date >= "2017-11-01" & Issue.Date <= "2017-11-30") # use the first/last of Nov
+View(november)
+```
+
+6. We won’t need to use the variable ‘ticket number’ in our analysis. Remove this column from your dataframe. Show the code that you used to accomplish this.
+```{r}
+CHRY2 <- CHRY[,-c(2)] # use the = symbol rather than <- if you were to completely remove on CHRY
+View(CHRY2)
+```
+
+7. Using the summary() function, find out even more about the distribution of fine amounts. Show a screenshot that displays the Minimum, 1st Quartile, Median, 3rd Quartile, Maximum, and Mean values for parking fine amounts.
+```{r}
+summary(CHRY2$Fine.amount)
+```
+
+8. Identify the five most common types of violation descriptions in your dataset. Show the code that you used to accomplish this, and a screenshot that shows the names of the five most common violation descriptions.
+```{r}
+summary(CHRY2$Violation.Description) # shows all summary for violations desc for top five
+
+```
+
+9. Create a new dataframe that only contains data for the five most common violations. Show the code that you used to accomplish this. You will use this new dataframe for all the following steps in this assignment.
+```{r}
+top5vio <- as.data.frame(sort(table(CHRY2$Violation.Description), decreasing = TRUE)[1:5]) # create a new df
+test <- filter(CHRY2, Violation.Description %in% top5vio$Var1) # pull the top5
+dim(test) # check for varaibles
+View(top5vio) # view your new dataframe
+```
+
+10. Using ggplot, create a barplot that displays the number of occurrences for the five most common violations. Be sure to label your axes, to give the graph a title, and to color each of your bars. In a sentence or two, describe what your barplot is showing you.
+```{r}
+library(ggplot2)
+library(wesanderson)
+top5bar <- ggplot(test, aes(Violation.Description, fill=Violation.Description)) + geom_bar() + scale_fill_manual(values = wes_palette(n=5, "BottleRocket2"))
+top5bar <- top5bar + labs(title = "Top 5 Parking Violations for Chryslers in LA FY2017") # add title
+top5bar <- top5bar + theme(axis.text.x = element_text(angle=45, hjust=1)) # adjust the labels on horizontal line
+top5bar
+
+```
+
+
+11. How did the average size of a fine vary from agency to agency? (use the
+AGENCY.SHORT.NAME variable to make this grouping). Find the average fine
+Size for each agency (show a screenshot of your code plus your results) and then
+display your results visually with a barplot built using ggplot. Give your barplot a title, and clearly label your x and y axes. Be sure to color your bars. In a sentence or two, describe what your barplot is showing you.
+```{r}
+Chrysler <- group_by(test, AGENCY.SHORT.NAME)
+Chrysler2 <- summarise(Chrysler, AvgFine = mean(Fine.amount))
+Chrysler2
+table(test$AGENCY.SHORT.NAME)
+AvgBar <- ggplot(Chrysler2, aes(x=AGENCY.SHORT.NAME, y=AvgFine)) + geom_bar(stat="identity", fill=topo.colors(n=8))
+AvgBar <- AvgBar + labs(title = "Average Fines Per Agency in LA FY2017 - Chrysler models") 
+AvgBar <- AvgBar + theme(axis.text.x = element_text(angle=45, hjust=1))
+AvgBar
+```
+
+
+12. Using ggplot, create a violin plot that shows the agencies on the x-axis, and the fine amounts on the y-axis. Give your violin plot a title, and clearly label your x and y axes. In a sentence or two, describe what your violin plot is showing you.
+```{r}
+install.packages("Hmisc")
+FineViolin <- ggplot(Chrysler, aes(x=AGENCY.SHORT.NAME, y=Fine.amount, fill=AGENCY.SHORT.NAME)) + geom_violin(trim=FALSE)
+FineViolin <- FineViolin + stat_summary(fun.data="mean_sdl", mult=1, geom="crossbar", width=0.04 )
+FineViolin <- FineViolin + labs(title = "Fine amounts per Agency in LA FY2017 - Chrysler models")
+FineViolin <- FineViolin + theme(axis.text.x = element_text(angle=45, hjust=1))
+FineViolin
+```
+
+
+13. Using ggplot, create a histogram that shows the frequency of ticket issuances per hour of the day. Use different colors to depict different types of violation descriptions. In a couple of sentences, describe what your histogram is showing you. What meaning could someone take from this? Why (or why not) does this histogram make sense, in terms of what it says about parking violations and times of day?
+```{r}
+TicketHist <- ggplot(Chrysler, aes(x=Issue.time, fill=Violation.Description)) + geom_histogram(color="black")
+TicketHist <- TicketHist + ggtitle("Ticket Issuance Per Hour") + xlab("Time Per Day (Military time)") + xlim(0, 2300)  
+TicketHist
+```
+
